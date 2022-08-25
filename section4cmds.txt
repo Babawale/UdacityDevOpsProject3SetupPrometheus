@@ -1,0 +1,80 @@
+## set up user and directories for prometheus
+
+sudo useradd --no-create-home prometheus
+sudo mkdir /etc/prometheus
+sudo mkdir /var/lib/prometheus
+
+## Download and unarchive prometheus
+wget https://github.com/prometheus/prometheus/releases/download/v2.38.0/prometheus-2.38.0.linux-amd64.tar.gz
+tar xvfz prometheus-2.38.0.linux-amd64.tar.gz
+
+
+## copy unarchived files to binaries folder
+sudo cp prometheus-2.38.0.linux-amd64/prometheus /usr/local/bin
+sudo cp prometheus-2.38.0.linux-amd64/promtool /usr/local/bin/
+sudo cp -r prometheus-2.38.0.linux-amd64/consoles /etc/prometheus
+sudo cp -r prometheus-2.38.0.linux-amd64/console_libraries /etc/prometheus
+sudo cp prometheus-2.38.0.linux-amd64/promtool /usr/local/bin
+
+## clean up
+rm -rf prometheus-2.38.0.linux-amd64.tar.gz prometheus-2.38.0.linux-amd64
+
+## create prometheus.yml
+sudo nano /etc/prometheus/prometheus.yml
+
+## create config for prometheus service
+sudo nano /etc/systemd/system/prometheus.service
+
+## change file and folder permissions
+sudo chown prometheus:prometheus /etc/prometheus
+sudo chown prometheus:prometheus /usr/local/bin/prometheus
+sudo chown prometheus:prometheus /usr/local/bin/promtool
+sudo chown -R prometheus:prometheus /etc/prometheus/consoles
+sudo chown -R prometheus:prometheus /etc/prometheus/console_libraries
+sudo chown -R prometheus:prometheus /var/lib/prometheus
+
+## Enable and start prometheus
+sudo systemctl daemon-reload
+sudo systemctl enable prometheus
+sudo systemctl restart prometheus
+sudo systemctl status prometheus
+
+## Install Alert Manager
+sudo useradd -M -r -s /bin/false alertmanager
+sudo mkdir /var/lib/alertmanager
+sudo mkdir /etc/alertmanager
+
+wget https://github.com/prometheus/alertmanager/releases/download/v0.24.0/alertmanager-0.24.0.linux-amd64.tar.gz
+tar xvfz alertmanager-0.24.0.linux-amd64.tar.gz
+
+sudo cp alertmanager-0.24.0.linux-amd64/alertmanager /usr/local/bin
+sudo cp alertmanager-0.24.0.linux-amd64/amtool /usr/local/bin/
+sudo cp alertmanager-0.24.0.linux-amd64/alertmanager.yml /etc/alertmanager/
+
+sudo chown alertmanager:alertmanager /etc/alertmanager/alertmanager.yml
+sudo chown alertmanager:alertmanager /usr/local/bin/alertmanager
+
+rm -rf alertmanager*
+
+## Edit alertmanager.yml
+sudo nano /etc/alertmanager/alertmanager.yml
+
+amtool check-config /etc/alertmanager/alertmanager.yml
+
+## alertmanager service
+sudo nano /etc/systemd/system/alertmanager.service
+sudo systemctl daemon-reload 
+sudo systemctl enable --now alertmanager.service 
+sudo systemctl status alertmanager.service 
+
+## alert rules
+sudo nano /etc/prometheus/rules.yml
+cat /etc/prometheus/rules.yml
+
+sudo chown -R prometheus:prometheus /etc/prometheus
+
+sudo systemctl daemon-reload
+sudo systemctl restart prometheus.service
+sudo systemctl restart alertmanager.service 
+sudo systemctl status alertmanager.service
+sudo systemctl status prometheus.service
